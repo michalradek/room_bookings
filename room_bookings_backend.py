@@ -1,5 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
+import bcrypt
 
 
 DB_PATH = "backend.sqlite3"
@@ -28,15 +29,15 @@ def check_database(table_name, column):
             )""")
     
 
-def login(login_entry):
+def login(username, password):
     with db_connection() as conn:
         cursor = conn.cursor()
         check_database("users", "id INTEGER PRIMARY KEY, username TEXT, passwd BLOB")
-        cursor.execute(f"SELECT passwd FROM users where username = {login_entry.get()}")
+        cursor.execute(f"SELECT passwd FROM users where username = {username}")
 
 def create_user(username, password):
         with db_connection() as conn:
-            check_database("users", "id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, passwd BLOB")
+            check_database("users", "id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, passwd text")
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
             existing = cursor.fetchone()
@@ -44,6 +45,6 @@ def create_user(username, password):
                 raise ValueError("User already exist")
             cursor.execute(
                 "INSERT INTO users (username, passwd) VALUES (?, ?)",
-                (username, password)
+                (username, bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode())
             )
         

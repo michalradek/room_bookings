@@ -1,5 +1,5 @@
 import tkinter as tk
-from room_bookings_backend import create_user
+from room_bookings_backend import create_user, login
 
 root = tk.Tk()
 root.title("Room's bookings")
@@ -8,7 +8,9 @@ root.resizable(False, False)
 
 def on_click_add():
     create_user(login_entry.get(), password_entry.get())
-    
+
+def on_click_login():
+    login(login_entry.get(), password_entry.get())
 
 
 #login frame
