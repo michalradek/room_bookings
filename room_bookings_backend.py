@@ -1,9 +1,11 @@
 import sqlite3
 from contextlib import contextmanager
 import bcrypt
+from tkinter import messagebox
 
 
 DB_PATH = "backend.sqlite3"
+is_authenticated = False
 
 @contextmanager
 def db_connection():
@@ -27,17 +29,27 @@ def check_database(table_name, column):
             CREATE TABLE IF NOT EXISTS {table_name} (
             {column}
             )""")
-    
+
 
 def login(username, password):
     with db_connection() as conn:
         cursor = conn.cursor()
         check_database("users", "id INTEGER PRIMARY KEY, username TEXT, passwd BLOB")
-        cursor.execute(f"SELECT passwd FROM users where username = {username}")
+        cursor.execute("SELECT passwd FROM users where username = ?", (username,))
+        match = cursor.fetchone()
+        if match is None:
+            return False
+        if bcrypt.checkpw(password.encode(), match[0].encode()):
+            global is_authenticated
+            is_authenticated = True
+            return True
+        else:
+            return False
+
 
 def create_user(username, password):
+        check_database("users", "id INTEGER PRIMARY KEY, username TEXT, passwd BLOB")
         with db_connection() as conn:
-            check_database("users", "id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, passwd text")
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
             existing = cursor.fetchone()
@@ -47,4 +59,3 @@ def create_user(username, password):
                 "INSERT INTO users (username, passwd) VALUES (?, ?)",
                 (username, bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode())
             )
-        
